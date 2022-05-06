@@ -1,5 +1,6 @@
 #include <unistd.h>
 #include <stdlib.h>
+#include <string.h>
 #include <ncurses.h>
 
 struct window{
@@ -33,7 +34,13 @@ void init_windows(struct window* messages, struct window* text, int text_lines){
 
 int main(){
     struct window msg, txt;
+    char buf[100];
     init_windows(&msg, &txt, 6);
+    for(int i = 0; i < 20; ++i){
+        memset(buf, 0, 100);
+        sprintf(buf, "message #%i\n", i);
+        append_window(&msg, buf);
+    }
     getchar();
     endwin();
     return 0;
