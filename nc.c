@@ -1,30 +1,39 @@
 #include <unistd.h>
+#include <stdlib.h>
 #include <ncurses.h>
 
-int main(){
-    int x, y, text_lines = 5;
-    WINDOW* text, * messages = initscr();
-    /*
-     * printw("hello");
-     * mvprintw(10, 30, "foooy");
-     * refresh();
-     * usleep(1000000);
-     * endwin();
-    */
-    getmaxyx(messages, y, x);
-    /*win = newwin(10, y, x-10, y-10);*/
-    /*text = newwin(10, y, y-10, x-10);*/
-    text = newwin(text_lines, x, y-text_lines, 0);
+struct window{
+    WINDOW* w;
+    int lines;
+};
+
+void append_window(struct window* w, char* str){
+    mvwprintw(w->w, w->lines++, 1, str);
+    wrefresh(w->w);
+}
+
+void init_windows(struct window* messages, struct window* text, int text_lines){
+    int x, y;
+    messages->lines = text->lines = 1;
+    messages->w = malloc(sizeof(WINDOW));
+    text->w = malloc(sizeof(WINDOW));
+    messages->w = initscr();
+    getmaxyx(messages->w, y, x);
+    text->w = newwin(text_lines, x, y-text_lines, 0);
     // how to resize relative to old dims
-    wresize(messages, y-text_lines, x);
+    wresize(messages->w, y-text_lines, x);
     refresh();
-    box(text, 0, 0);
-    box(messages, 0, 0);
-    mvwprintw(messages, 0, 1, "MESSAGES");
-    mvwprintw(text, 0, 1, "HELLO");
-    wrefresh(messages);
-    wrefresh(text);
-    /*mvprintw(10, 30, "foooy");*/
+    box(text->w, 0, 0);
+    box(messages->w, 0, 0);
+    mvwprintw(messages->w, 0, 1, "MESSAGES");
+    mvwprintw(text->w, 0, 1, "HELLO");
+    wrefresh(messages->w);
+    wrefresh(text->w);
+}
+
+int main(){
+    struct window msg, txt;
+    init_windows(&msg, &txt, 6);
     getchar();
     endwin();
     return 0;
