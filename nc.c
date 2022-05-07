@@ -65,7 +65,7 @@ void append_window(struct window* w, char* str){
     (void)x;
     /*wmove(w->w, y+1, 1);*/
     wmove(w->w, y, 1);
-    wprintw(w->w, str);
+    wprintw(w->w, "%s", str);
     window_refresh(w);
     ++w->lines;
     pthread_mutex_unlock(&w->lock);
@@ -196,7 +196,7 @@ int main(int a, char** b){
 */
                 /*wprintw(txt.w, 0, 1, buf);*/
                 /*waddstr(txt.w, buf);*/
-                wprintw(txt.w, buf);
+                wprintw(txt.w, "%s", buf);
                 wmove(txt.w, 1, 1);
                 memset(buf, 0, idx);
                 /*waddstr(txt.w, buf);*/
