@@ -167,12 +167,6 @@ void broadcast_msg(char* msg, struct window* w, struct kq* k){
 }
 
 int main(int a, char** b){
-uint8_t* xx = (uint8_t*)b[1];
-char* ff = process_kq_msg(xx);
-if(ff)puts(ff);
-/*printf("%s\n", process_kq_msg(xx));*/
-
-return 1;
     struct window msg, txt;
     struct kq k;
     char buf[200] = {0};
