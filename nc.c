@@ -71,6 +71,22 @@ void append_window(struct window* w, char* str){
     pthread_mutex_unlock(&w->lock);
 }
 
+void resize_windows(struct window* messages, struct window* text, int input_fraction){
+    int x, y, text_lines;
+    getmaxyx(stdscr, y, x);
+    text_lines = y/input_fraction;
+    text_lines = (text_lines < 3) ? 3 : text_lines;
+    messages->ymax = y-text_lines;
+    messages->xmax = x;
+    wresize(messages->w, y-text_lines, x);
+    wresize(text->w, text_lines, x);
+    /*box(messages->w, 0, 0);*/
+    box(text->w, '|', '+');
+    window_refresh(messages);
+    window_refresh(text);
+    refresh();
+}
+
 void init_windows(struct window* messages, struct window* text, int input_fraction){
     int x, y, text_lines;
 
@@ -116,19 +132,29 @@ void init_windows(struct window* messages, struct window* text, int input_fracti
     wrefresh(text->w);
 }
 
-/*
- * writing simple readline implementation - up arrow goes back in history
- * enter submits
- * typing stores in a new buffer
- * each time a key is pressed, it's written to current ting
-*/
+char* process_kq_msg(uint8_t* bytes){
+    char* cursor = (char*)bytes;
+    char* ret;
+    strsep(&cursor, ",");
+    if(!cursor)return NULL;
+    ret = cursor;
+    cursor = strchr(cursor, ',');
+    if(!cursor)return NULL;
+    *cursor = ':';
+    /* ret-1 is guaranteed to exist - ',' */
+    memmove(ret-1, ret, cursor-ret+1);
+    *cursor = ' ';
+    return ret-1;
+}
 
 void* kq_reader_thread(void* vkw){
     struct kq_win_pair* kw = vkw;
-    uint8_t* recvd;
+    uint8_t* to_free;
+    char* recvd;
     while(1){
-        recvd = pop_kq(kw->k, NULL);
-        append_window(kw->w, (char*)recvd);
+        recvd = process_kq_msg((to_free = pop_kq(kw->k, NULL)));
+        if(recvd)append_window(kw->w, recvd);
+        free(to_free);
     }
 }
 
@@ -141,6 +167,12 @@ void broadcast_msg(char* msg, struct window* w, struct kq* k){
 }
 
 int main(int a, char** b){
+uint8_t* xx = (uint8_t*)b[1];
+char* ff = process_kq_msg(xx);
+if(ff)puts(ff);
+/*printf("%s\n", process_kq_msg(xx));*/
+
+return 1;
     struct window msg, txt;
     struct kq k;
     char buf[200] = {0};
@@ -164,6 +196,8 @@ int main(int a, char** b){
     wmove(msg.w, 1, 1);
     wmove(txt.w, 1, 1);
     refresh();
+
+    /*getchar();*/
     while(1){
         /*switch((c = getchar())){*/
         switch((c = wgetch(msg.w))){
@@ -172,6 +206,9 @@ int main(int a, char** b){
             case KEY_RIGHT:
                 /*for(int i = 100; i > 0; --i)*/
                 prefresh(msg.w, 100, 0, 0, 0, msg.ymax, msg.xmax);
+                break;
+            case 'w':
+                resize_windows(&msg, &txt, 5);
                 break;
             case KEY_EXIT:
             case 'q':
